@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lance Liu | Senior Level Designer</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --accent-orange: #e65100;
+            --accent-cyan: #00e5ff;
+            --line: #1e1e1e;
+            --text-main: #f5f5f5;
+            --text-dim: #999;
+            --font-mono: "JetBrains Mono", "SF Mono", monospace;
+            --transition: cubic-bezier(0.16, 1, 0.3, 1);
+            --base-size: 18px; 
+        }
+
+        * { box-sizing: border-box; }
+        body { 
+            background: var(--bg); color: var(--text-main); 
+            font-family: "Inter", -apple-system, sans-serif; font-size: var(--base-size);
+            font-weight: 300; margin: 0; overflow-x: hidden; line-height: 1.7;
+            cursor: none; /* 使用自定义HUD焦点 */
+        }
+
+        /* HUD & Ripple Canvas */
+        #hud-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999;
+        }
+
+        h1, h2, h3 { font-weight: 600; }
+        h3 { letter-spacing: 1px; margin-bottom: 25px; }
+
+        /* NAVIGATION */
+        nav {
+            position: fixed; top: 0; width: 100%; z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 25px 60px; backdrop-filter: blur(15px); border-bottom: 1px solid var(--line);
+            background: rgba(10,10,10,0.7);
+        }
+        .nav-logo { font-weight: 800; font-size: 1.1rem; letter-spacing: 1px; cursor: default; pointer-events: auto; }
+        .nav-email { font-family: var(--font-mono); font-size: 18px; color: var(--text-dim); text-decoration: none; transition: 0.3s; pointer-events: auto; }
+        .nav-email:hover { color: var(--accent-orange); }
+
+        /* VIEW CONTROL */
+        .view { display: none; animation: fadeIn 0.6s var(--transition); }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* HOME HERO */
+        .hero { height: 55vh; display: flex; flex-direction: column; justify-content: center; padding: 0 60px; max-width: 1200px; }
+        .hero h1 { font-size: 4.2rem; margin: 0; font-weight: 700; letter-spacing: -2px; line-height: 1.1; }
+        .hero p { color: var(--text-dim); margin-top: 30px; max-width: 800px; font-size: 1.2rem; }
+
+        /* PROJECT CARDS */
+        .project-grid { padding: 0 60px 100px 60px; }
+        .card { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 80px; margin-bottom: 180px; align-items: start; }
+        .visual-box { background: #111; border: 1px solid var(--line); aspect-ratio: 16/9; overflow: hidden; position: relative; cursor: pointer; pointer-events: auto; }
+        .visual-box img, .visual-box video { width: 100%; height: 100%; object-fit: cover; opacity: 0.75; transition: 0.6s var(--transition); }
+        .visual-box:hover img, .visual-box:hover video { opacity: 1; transform: scale(1.03); }
+        
+        .meta h3 { font-size: 2.5rem; margin: 0 0 15px 0; }
+        .meta .tags { font-family: var(--font-mono); color: var(--accent-orange); font-size: 11px; margin-bottom: 15px; display: block; letter-spacing: 2px; }
+        .meta .desc { color: var(--text-dim); margin-bottom: 40px; }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; border-top: 1px solid var(--line); padding-top: 30px; }
+        .data-item label { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; }
+        .data-item span { font-weight: 500; color: #eee; font-size: 16px; }
+
+        /* CASE STUDY LAYOUT */
+        .case-wrapper { display: grid; grid-template-columns: 320px 1fr; max-width: 1400px; margin: 0 auto; padding: 150px 60px; gap: 100px; }
+        .case-sidebar { position: sticky; top: 150px; height: fit-content; }
+        .case-sidebar h2 { font-size: 2rem; margin-bottom: 40px; }
+        .case-nav a { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); text-decoration: none; margin-bottom: 25px; letter-spacing: 1px; pointer-events: auto; }
+        .case-nav a.active { color: var(--accent-orange); border-left: 2.5px solid var(--accent-orange); padding-left: 20px; }
+
+        .case-content section { margin-bottom: 140px; }
+        .case-content h3 { font-size: 2.4rem; border-bottom: 1px solid var(--line); padding-bottom: 25px; margin-bottom: 40px; }
+        .case-content p { color: var(--text-dim); margin-bottom: 35px; }
+        .case-content img, .case-content video { width: 100%; border: 1px solid var(--line); margin-bottom: 25px; display: block; }
+        .img-caption { font-family: var(--font-mono); font-size: 12px; color: #555; margin-bottom: 60px; text-align: center; }
+
+        .metric-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 14px; margin: 30px 0; border: 1px solid var(--line); }
+        .metric-table td { padding: 18px; border: 1px solid var(--line); color: var(--text-dim); }
+        .metric-table td strong { color: var(--accent-cyan); }
+
+        .disclaimer { font-family: var(--font-mono); font-size: 10px; color: #444; margin-top: -15px; margin-bottom: 50px; text-align: center; }
+        .contact-hint { font-family: var(--font-mono); font-size: 12px; color: #e65100; border-top: 1px solid var(--line); padding-top: 30px; margin-top: 60px; }
+        
+        .btn { display: inline-block; padding: 15px 35px; border: 1px solid var(--text-main); color: var(--text-main); font-family: var(--font-mono); font-size: 12px; text-decoration: none; cursor: pointer; text-transform: uppercase; transition: 0.3s; pointer-events: auto; }
+        .btn:hover { background: var(--text-main); color: var(--bg); }
+        
+        .nda-lock { position: absolute; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; }
+
+        /* 图片放大遮罩层 */
+        .img-zoom-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); /* 半透明黑背景 */
+            z-index: 9500; /* 确保在内容之上，但在 HUD Canvas (9999) 之下 */
+            display: none; /* 初始隐藏 */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer; /* 点击任何地方关闭 */
+            animation: fadeIn 0.3s ease;
+        }
+
+        .img-zoom-overlay img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 1px solid var(--line);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            object-fit: contain;
+        }
+        /* 给可点击图片一个视觉提示 */
+        .case-content img {
+            cursor: pointer;
+            transition: transform 0.3s var(--transition);
+        }
+        .case-content img:hover {
+            transform: scale(1.01);
+            border-color: var(--accent-cyan);
+        }
+
+        
+        footer { padding: 80px 60px; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 12px; color: #333; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+
+<canvas id="hud-canvas"></canvas>
+
+<!-- 图片放大容器 -->
+<div id="image-zoom-overlay" class="img-zoom-overlay">
+    <img src="" alt="Zoomed View">
+</div>
+
+<nav>
+    <div class="nav-logo">LANCE LIU</div>
+    <a href="mailto:spicalance0039workwork@gmail.com" class="nav-email">spicalance0039workwork@gmail.com</a>
+</nav>
+
+<!-- 1. HOME VIEW -->
+<main id="view-home" class="view active">
+    <header class="hero">
+        <h1>Senior Level Designer</h1>
+        <p>7+ years of professional experience in Level Design. Specialized in massive PvP spatial balancing, systemic open-world standards, and technical iteration workflows.</p>
+    </header>
+
+    <section class="project-grid">
+        <!-- CB Card -->
+        <div class="card">
+            <div class="visual-box" onclick="showView('cb')">
+                <img src="cb_cover.webp" alt="Heilung Fjord Cover">
+            </div>
+            <div class="meta">
+                <span class="tags">SHIPPED / MASSIVE PVP</span>
+                <h3>Conqueror's Blade</h3>
+                <p class="desc">Designed and iterated 15v15 siege maps with a focus on asymmetric spatial balance and route congestion control.</p>
+                <div class="data-grid">
+                    <div class="data-item"><label>Role</label><span>Level Designer</span></div>
+                    <div class="data-item"><label>Project Type</label><span>Medieval Siege Online PvP</span></div>
+                    <div class="data-item"><label>Achievement</label><span>Best Map: Heilung Fjord</span></div>
+                    <div class="data-item"><label>Tech Stack</label><span>Lua / Chaos Engine</span></div>
+                </div>
+                <br><br><a class="btn" onclick="showView('cb')">View More Details</a>
+            </div>
+        </div>
+
+        <!-- Anonymous Card -->
+        <div class="card">
+            <div class="visual-box" onclick="checkPassword()">
+                <div class="nda-lock">
+                    <span style="font-size: 1.5rem; margin-bottom: 10px;">🔒</span>
+                    <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-cyan); letter-spacing: 2px;">NDA RESTRICTED</span>
+                </div>
+            </div>
+            <div class="meta">
+                <span class="tags" style="color: var(--accent-cyan);">TECHNICAL LD / STANDARDS</span>
+                <h3>Anonymized Unity Project</h3>
+                <p class="desc">Establishing production-ready white papers and encounter standards for an expansive Action RPG region.</p>
+                <div class="data-grid">
+                    <div class="data-item"><label>Focus</label><span>Workflow Pipeline / Encounter & LD</span></div>
+                    <div class="data-item"><label>Engine</label><span>Unity / C#</span></div>
+                    <div class="data-item"><label>Deliverables</label><span>White Paper & Gameplay Prototypes</span></div>
+                    <div class="data-item"><label>Access</label><span>Password Access Only</span></div>
+                </div>
+                <br><br><a class="btn" style="border-color: var(--accent-cyan); color: var(--accent-cyan);" onclick="checkPassword()">Unlock by Password</a>
+            </div>
+        </div>
+
+        <!-- Personal Card -->
+        <div class="card">
+            <div class="visual-box" onclick="showView('personal')">
+                <img src="WaterRuin_Cover.webp" alt="Water Ruins Overview">
+            </div>
+            <div class="meta">
+                <span class="tags">PERSONAL PORTFOLIO</span>
+                <h3>Personal UE Linear Projects</h3>
+                <p class="desc">Condensed, high-intensity linear level experiences focused on environmental storytelling and 3C pacing validation.</p>
+                <div class="data-grid">
+                    <div class="data-item"><label>Engine</label><span>Unreal Engine 5</span></div>
+                    <div class="data-item"><label>Tech</label><span>Blueprint & GAS</span></div>
+                    <div class="data-item"><label>Duration</label><span>10 - 20 Mins Playtime</span></div>
+                    <div class="data-item"><label>Core Goal</label><span>Linear Pacing & 3C & Guidance</span></div>
+                </div>
+                <br><br><a class="btn" onclick="showView('personal')">View More Details</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div>© 2024 LANCE LIU</div>
+        <div>ALL WORK-IN-PROGRESS MATERIALS ARE ANONYMIZED FOR DEMONSTRATION PURPOSES.</div>
+    </footer>
+</main>
+
+<!-- 2. CASE STUDY: CB (Full content restored) -->
+<div id="view-cb" class="view">
+    <div class="case-wrapper">
+        <aside class="case-sidebar">
+            <h2>Conqueror's Blade</h2>
+            <nav class="case-nav">
+                <a href="#cb-1" class="active">01. TACTICAL MAP</a>
+                <a href="#cb-2">02. WHITEBOX ITERATION</a>
+                <a href="#cb-showcase">03. GAMEPLAY SHOWCASE</a>
+                <a href="#cb-3">04. FINAL SHIPPED</a>
+            </nav>
+            <div class="btn" style="margin-top: 50px;" onclick="showView('home')">← HOME</div>
+        </aside>
+        <main class="case-content">
+            <section id="cb-1">
+                <h3>Heilung Fjord Map Design</h3>
+                <video autoplay loop muted playsinline><source src="cb_attacker_1.mp4" type="video/mp4"></video>
+                    <p>
+                    The primary design goal was to ensure that combat remains 
+                    <strong><span style="color:#8fd3e8;">uncertain until the final moments</span></strong>.
+                    </p>
+                    
+                    <p>
+                    To achieve this, the level intentionally adopts a 
+                    <strong><span style="color:#8fd3e8;">layered, progressive terrain and environment structure</span></strong>, 
+                    reducing reliance on 
+                    <strong><span style="color:#8fd3e8;">static wall defenses</span></strong> 
+                    while increasing the complexity of 
+                    <strong><span style="color:#8fd3e8;">urban and street-level combat</span></strong>.
+                    </p>
+                    
+                    <p>
+                    This allows both attackers and defenders to engage in 
+                    <strong><span style="color:#8fd3e8;">dynamic counterplay</span></strong>, 
+                    employing a variety of tactics and strategies to 
+                    <strong><span style="color:#8fd3e8;">contest key objectives</span></strong>, 
+                    ultimately delivering a strong and engaging gameplay experience.
+                    </p>
+                    
+                    <p>
+                    Across multiple seasons, the map maintained a 
+                    <strong><span style="color:#8fd3e8;">long-term win-rate balance within a 46–54% range</span></strong>, 
+                    and became 
+                    <strong><span style="color:#8fd3e8;">one of the most popular maps in competitive league play</span></strong>.
+                    </p>
+                    
+                <img src="CB_MapOverview.webp" alt="Tactical Overview">
+                <img src="cb_tactic.webp" alt="Tactic Breakdown">
+                <div class="img-caption">// Strategic routing and objective hierarchy for Heilung Fjord.</div>
+            </section>
+            
+            <section id="cb-2">
+                <h3>Whitebox Tactics Iteration</h3>
+                <p>Demonstrating how spatial constraints shape combat encounters. Focus on multi-route pressure and line-of-sight management for large-scale unit battles.</p>
+                <img src="cb_whitebox.webp" alt="Whitebox Layout">
+                <img src="CB_WhiteboxDetail1.webp" alt="Whitebox Detail 1">
+                <img src="CB_WhiteboxDetail2.webp" alt="Whitebox Detail 2">
+                <div class="img-caption">// Evolution of spatial logic and route congestion from early blockout.</div>
+            </section>
+
+            <section id="cb-showcase">
+                <h3>Gameplay Showcase</h3>
+                <video autoplay loop muted playsinline><source src="cb_attacker_2.mp4" type="video/mp4"></video>
+                <video autoplay loop muted playsinline><source src="cb_attacker_3.mp4" type="video/mp4"></video>
+                <video autoplay loop muted playsinline><source src="cb_defender_1.mp4" type="video/mp4"></video>
+                <video autoplay loop muted playsinline><source src="cb_defender_2.mp4" type="video/mp4"></video>
+                <div class="disclaimer">Footage sourced from web for design demonstration purposes only.</div>
+            </section>
+
+            <section id="cb-3">
+                <h3>Heilung Fjord Final Delivery</h3>
+                <img src="CB_MapOverview.webp" alt="Final Shipped Level">
+                <img src="cb_final_2.webp" alt="Closeup Detail">
+                <div class="img-caption">// Final environment preserving spatial logic while improving visual readability.</div>
+                <div class="contact-hint">FOR MORE DETAILED BREAKDOWNS OR TO REQUEST A FULL PORTFOLIO PDF, PLEASE CONTACT ME VIA E-MAIL.</div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- 3. CASE STUDY: TECH (Anonymized 3 Modules) -->
+<div id="view-tech" class="view" style="--accent-orange: var(--accent-cyan)">
+    <div class="case-wrapper">
+        <aside class="case-sidebar">
+            <h2 style="color: var(--accent-cyan)">Anonymized Work Samples</h2>
+            <nav class="case-nav">
+                <a href="#t-1" class="active">01. STANDARDIZATION</a>
+                <a href="#t-2">02. WORLD PLANNING</a>
+                <a href="#t-3">03. PRODUCTION TOOLS</a>
+            </nav>
+            <div class="btn" style="border-color: var(--accent-cyan); margin-top: 50px;" onclick="showView('home')">← HOME</div>
+        </aside>
+        <main class="case-content">
+            <section id="t-1">
+                <h3>Standardization & White Paper</h3>
+                <p>Authored the <strong><span style="color:#8fd3e8;">"Level Environment White Paper"</span></strong> to bridge design intent and technical execution. Focused on <strong><span style="color:#8fd3e8;"></span>3C Data Management and Environment Standardization</span></strong>.</p>
+                <p><em>
+                    The following data has been <strong><span style="color:#8fd3e8;">anonymized and desensitized</span></strong> for demonstration purposes, and is included to showcase <strong><span style="color:#8fd3e8;">design and development methodology</span></strong> rather than for practical use.
+                </em></p>
+                    
+                <table class="metric-table">
+                    <tr>
+                        <td><strong>Movement Speed</strong></td>
+                        <td>
+                            Walk: 1.5–2.5 m/s<br>
+                            Jog: 4.5–5.5 m/s<br>
+                            Sprint: 5–7 m/s
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Vertical Traversal</strong></td>
+                        <td>
+                            Step Height: ≤ 0.35 m<br>
+                            Assisted Step Range: 0.35–0.65 m (requires traversal logic)<br>
+                            Max Drop Height: 1.1 m
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Jump & Air Control</strong></td>
+                        <td>
+                            Horizontal Jump Distance: ~4 m<br>
+                            Falling Acceleration: 20 m/s²
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Swimming Movement</strong></td>
+                        <td>
+                            Swim Speed: &lt; 2 m/s<br>
+                            Sprint Swim Speed: &lt; 4 m/s
+                        </td>
+                    </tr>
+                </table>
+
+                <p>Metrics defined by level design to align 3C behavior, traversal logic, and encounter pacing.</p>
+                <img src="L6_Metrics.webp" alt="L6_Metrics">
+                <table class="metric-table">
+                    <tr>
+                        <td><strong>0°–30°</strong></td>
+                        <td>Fully traversable terrain. No movement or combat restrictions.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>30°–40°</strong></td>
+                        <td>Traversable with reduced stability. Combat remains viable.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>40°–50°</strong></td>
+                        <td>Limited traversal. Intended for controlled pathing or obstacle edges.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>50°–70°</strong></td>
+                        <td>Avoid Making</td>
+                    </tr>
+                    <tr>
+                        <td><strong>70°–90°</strong></td>
+                        <td>Anonymized sensitive information</td>
+                    </tr>
+                </table>
+                <table class="metric-table">
+                    <tr>
+                        <td><strong>Agent Category</strong></td>
+                        <td>Standard NPC</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Agent Radius</strong></td>
+                        <td>0.4 m</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Agent Height</strong></td>
+                        <td>2.1 m</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Step Height</strong></td>
+                        <td>0.35 m</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Max Walkable Slope</strong></td>
+                        <td>40°</td>
+                    </tr>
+                </table>
+                    <table class="metric-table">
+                    <tr>
+                        <td><strong>Agent Category</strong></td>
+                        <td>Standard NPC</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Agent Radius</strong></td>
+                        <td>0.4 m</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Agent Height</strong></td>
+                        <td>2.1 m</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Step Height</strong></td>
+                        <td>0.35 m</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Max Walkable Slope</strong></td>
+                        <td>40°</td>
+                    </tr>
+                </table>
+            </section>
+            
+            <section id="t-2">
+                <h3>World-Scale Layout & Routing</h3>
+                <p>Managed large-scale whitebox planning for regions from 1km² to 4.1km². Focused on content hierarchy (Primary/Secondary/Tertiary POIs) and exploration flow.</p>
+                <img src="L6_02.webp" alt="L6_02">
+                <img src="L6_03.webp" alt="L6_03">
+                <img src="L6_04.webp" alt="L6_04">
+                <img src="L6_05.webp" alt="L6_05">
+                <ul style="color: var(--text-dim); margin-bottom: 40px;">
+                    <li>POI hierarchy control for player guidance strength.</li>
+                    <li>Multi-layered routing for both Golden Path and hidden exploration.</li>
+                    <li>Technical whiteboxing for cross-departmental alignment.</li>
+                </ul>
+            </section>
+
+            <section id="t-3">
+                <h3>Production Tools & Workflow</h3>
+                <p>Collaborated with the engine team to eliminate iteration bottlenecks through custom toolsets.</p>
+                <img src="L6_Tool_01.webp" alt="L6_Tool_01">
+                <img src="L6_Tool_02.webp" alt="L6_Tool_02">
+                <img src="L6_Tool_03.webp" alt="L6_Tool_03">
+                <ul style="color: var(--text-dim);">
+                    <li><strong>TPS Camera Tool:</strong> One-click launch from Editor to Player POV (< 1s), eliminating multi-minute boot times.</li>
+                    <li><strong>Level Slot System:</strong> Modular structures to support scalable Action RPG world production.</li>
+                </ul>
+                <div class="contact-hint">TECHNICAL DOCUMENTATION IS RESTRICTED. PLEASE CONTACT ME VIA E-MAIL FOR FURTHER INFO.</div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- 4. CASE STUDY: PERSONAL (Full content restored) -->
+<div id="view-personal" class="view">
+    <div class="case-wrapper">
+        <aside class="case-sidebar">
+            <h2>Linear Archive</h2>
+            <nav class="case-nav">
+                <a href="#p-1" class="active">01. WATER RUINS</a>
+                <a href="#p-2">02. TINY ISLAND</a>
+            </nav>
+            <div class="btn" style="margin-top: 50px;" onclick="showView('home')">← HOME</div>
+        </aside>
+        <main class="case-content">
+            <section id="p-1">
+                <h3>Project: Water Ruins (UE5)</h3>
+                <p><em>
+                    All projects shown below were <strong><span style="color:#8fd3e8;">independently developed during personal time</span></strong> using 
+                    <strong><span style="color:#8fd3e8;">Unreal Engine 5</span></strong>. 
+                    Gameplay systems were implemented exclusively with 
+                    <strong><span style="color:#8fd3e8;">Blueprints</span></strong>, 
+                    <strong><span style="color:#8fd3e8;">Blueprint Interfaces</span></strong>, and 
+                    <strong><span style="color:#8fd3e8;">Gameplay Ability System (GAS)</span></strong>, 
+                    with <strong><span style="color:#8fd3e8;">no external plugins</span></strong> used.
+                    <br><br>
+                    All art assets were <strong><span style="color:#8fd3e8;">legally purchased from the UE5 Fab Marketplace</span></strong> and are used 
+                    <strong><span style="color:#8fd3e8;">solely for personal learning, design exploration, and development practice</span></strong>.
+                </em></p>
+                    
+                    
+                <p>Independently developed gameplay whitebox focused on high-density linear flow and verticality. Validating 3C mechanics through environmental navigation.</p>
+                <img src="WaterRuin_Cover.webp" alt="Water Ruins Cover">
+                <img src="WaterRuinOverView.webp" alt="Water Ruins Overview">
+                <video autoplay loop muted playsinline><source src="water_1.mp4" type="video/mp4"></video>
+                <video autoplay loop muted playsinline><source src="water_2.mp4" type="video/mp4"></video>
+                <video autoplay loop muted playsinline><source src="water_3.mp4" type="video/mp4"></video>
+                <video autoplay loop muted playsinline><source src="water_4.mp4" type="video/mp4"></video>
+                <video autoplay loop muted playsinline><source src="water_5.mp4" type="video/mp4"></video>
+                <div class="img-caption">// UE5 Whitebox gameplay sequences focusing on movement pacing and 3C flow.</div>
+            </section>
+            
+            <section id="p-2">
+                <h3>Project: Tiny Island</h3>
+                <p><em>
+                    All projects shown below were <strong><span style="color:#8fd3e8;">independently developed during personal time</span></strong> using 
+                    <strong><span style="color:#8fd3e8;">Unreal Engine 5</span></strong>. 
+                    Gameplay systems were implemented exclusively with 
+                    <strong><span style="color:#8fd3e8;">Blueprints</span></strong>, 
+                    <strong><span style="color:#8fd3e8;">Blueprint Interfaces</span></strong>, and 
+                    <strong><span style="color:#8fd3e8;">Gameplay Ability System (GAS)</span></strong>, 
+                    with <strong><span style="color:#8fd3e8;">no external plugins</span></strong> used.
+                    <br><br>
+                    All art assets were <strong><span style="color:#8fd3e8;">legally purchased from the UE5 Fab Marketplace</span></strong> and are used 
+                    <strong><span style="color:#8fd3e8;">solely for personal learning, design exploration, and development practice</span></strong>.
+                </em></p>
+
+                <p>Exploring micro-scale encounter design and environmental storytelling within a compact linear space. High-intensity pacing in a 5-8 minute vertical slice.</p>
+                <img src="TinyIsland_Cover.webp" alt="Tiny Island Cover">
+                <img src="TinyIsland_Detail.webp" alt="Tiny Island Detail">
+                <div class="contact-hint">PLAYABLE BUILDS AVAILABLE UPON REQUEST VIA E-MAIL.</div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<script>
+    // 1. DIGITAL RIPPLE & HUD EFFECT
+    const canvas = document.getElementById('hud-canvas');
+    const ctx = canvas.getContext('2d');
+    let mouse = { x: -100, y: -100 };
+    let ripples = [];
+
+// 升级版数据涟漪逻辑
+    class Ripple {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.r = 0; // 初始半径
+            this.opacity = 0.6; // 初始亮度
+            this.maxRadius = 100 + Math.random() * 100; // 每个涟漪扩散大小不同
+            this.speed = 4; // 初始初速度
+        }
+
+        update() {
+            // 模拟物理衰减：扩散越来越慢，半径增加
+            this.r += this.speed;
+            this.speed *= 0.96; // 阻尼系数，让波纹最后停下来
+            this.opacity -= 0.008; // 消失速度
+        }
+
+        draw() {
+            if (this.opacity <= 0) return;
+
+            // 绘制主波
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(0, 229, 255, ${this.opacity})`;
+            ctx.lineWidth = 1.5 * this.opacity; // 线条随能量减弱变细
+            ctx.stroke();
+
+            // 绘制次波（Offset Echo）- 增加数据律动感
+            if (this.r > 20) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.r - 15, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(0, 229, 255, ${this.opacity * 0.3})`; // 次波更暗
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            }
+        }
+    }
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+    window.dispatchEvent(new Event('resize'));
+
+    window.addEventListener('mousemove', e => {
+        mouse.x = e.clientX; mouse.y = e.clientY;
+        if (Math.random() > 0.93) ripples.push(new Ripple(mouse.x, mouse.y));
+    });
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (mouse.x > 0) {
+            // 准星
+            ctx.strokeStyle = 'rgba(0, 229, 255, 0.15)';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath(); ctx.moveTo(0, mouse.y); ctx.lineTo(canvas.width, mouse.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(mouse.x, 0); ctx.lineTo(mouse.x, canvas.height); ctx.stroke();
+            ctx.strokeRect(mouse.x - 12, mouse.y - 12, 24, 24);
+            ctx.fillStyle = 'rgba(0, 229, 255, 0.7)';
+            ctx.fillRect(mouse.x - 1, mouse.y - 1, 3, 3);
+        }
+
+        ripples.forEach((r, i) => {
+            r.update(); r.draw();
+            if (r.opacity <= 0) ripples.splice(i, 1);
+        });
+
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    // 2. VIEW CONTROLLER
+    function showView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-' + id).classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    function checkPassword() {
+        const pass = prompt("Access Restricted. Enter Password:");
+        if (pass === "LANCE2024") { showView('tech'); } 
+        else if (pass !== null) { alert("Access Denied."); }
+    }
+
+    // 3. IMAGE ZOOM LOGIC
+    const zoomOverlay = document.getElementById('image-zoom-overlay');
+    const zoomImg = zoomOverlay.querySelector('img');
+
+    // 监听所有详情页内的图片点击
+    document.querySelectorAll('.case-content img').forEach(img => {
+        img.addEventListener('click', () => {
+            zoomImg.src = img.src; // 将点击的图片路径赋给遮罩层图片
+            zoomOverlay.style.display = 'flex'; // 显示遮罩
+        });
+    });
+
+    // 点击遮罩层任何地方关闭
+    zoomOverlay.addEventListener('click', () => {
+        zoomOverlay.style.display = 'none';
+    });
+</script>
+
+</body>
+</html>
