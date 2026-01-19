@@ -144,58 +144,78 @@
         /* 隐藏移动端 AR 按钮（如果不需要） */
         #ar-button { display: none; }
 
-        /* --- 手机端适配补丁 (Responsive Patch) --- */
-        @media (max-width: 768px) 
-        {
-            /* 1. 导航栏缩小边距 */
-            nav { padding: 15px 25px; }
-            .nav-email { font-size: 14px; }
+        /* --- 手机端适配最终优化版 (Senior LD Optimized) --- */
+        @media (max-width: 768px) {
+            /* 0. 禁用桌面端特有的交互 */
+            #hud-canvas { display: none; }
+            body, * { cursor: auto !important; }
 
-            /* 2. Hero 标题缩小，避免爆屏 */
-            .hero { height: 40vh; padding: 0 25px; }
-            .hero h1 { font-size: 2.5rem; letter-spacing: -1px; }
-            .hero p { font-size: 1rem; margin-top: 15px; }
+            /* 1. 导航与首屏 */
+            nav { padding: 15px 20px; }
+            .nav-email { font-size: 15px; }
+            .hero { height: auto; padding: 100px 20px 40px 20px; }
+            .hero h1 { font-size: 2.4rem; letter-spacing: -1px; line-height: 1.2; }
+            .hero p { font-size: 1rem; margin-top: 15px; opacity: 0.8; }
 
-            /* 3. 项目列表：从左右排列改为上下垂直堆叠 */
-            .project-grid { padding: 0 25px 50px 25px; }
+            /* 2. 项目列表 */
+            .project-grid { padding: 0 20px 50px 20px; }
             .card { 
                 display: flex; 
                 flex-direction: column; 
-                gap: 30px; 
-                margin-bottom: 80px; 
+                gap: 25px; 
+                margin-bottom: 70px; 
             }
-            
-            /* 4. 详情页布局：侧边栏改为顶部显示或隐藏 */
+            .data-grid { 
+                grid-template-columns: 1fr !important; /* 单列显示元数据 */
+                gap: 12px !important;
+            }
+
+            /* 3. 详情页布局 */
             .case-wrapper { 
                 display: flex; 
                 flex-direction: column; 
-                padding: 80px 20px 40px 20px; 
-                gap: 40px; 
+                padding: 80px 15px 40px 15px; 
+                gap: 30px; 
             }
-            .case-sidebar { 
-                position: relative; 
-                top: 0; 
+            .case-sidebar { width: 100%; position: relative; top: 0; }
+            .case-sidebar h2 { font-size: 1.6rem; }
+            .case-nav { display: none; } /* 手机端隐藏侧边跳转 */
+
+            /* 4. 详情页内容 */
+            .case-content section { margin-bottom: 60px; }
+            h3 { font-size: 1.3rem; padding-bottom: 10px; margin-bottom: 20px; }
+            .case-content p { font-size: 1rem; line-height: 1.6; }
+
+            /* 5. 媒体资源适配 - 保持比例不拉伸 */
+            model-viewer, 
+            .case-content video, 
+            .case-content img { 
+                width: 100% !important;
+                height: auto !important;
+                aspect-ratio: 16 / 9; 
+                margin-bottom: 15px;
+            }
+
+            /* 6. 表格防溢出 */
+            .metric-table { 
+                display: block; 
+                overflow-x: auto; 
+                border: none;
+            }
+
+            /* 7. 交互元素 */
+            .btn { 
                 width: 100%; 
+                text-align: center;
+                padding: 16px 0 !important;
             }
-            .case-sidebar h2 { font-size: 1.5rem; margin-bottom: 20px; }
-            .case-nav { display: none; } /* 手机端隐藏复杂的侧边导航，直接顺着滑下去看 */
 
-            /* 5. 调整标题字号 (H3) */
-            h3 { font-size: 1.4rem; }
-
-            /* 6. 3D 查看器和视频高度调整 */
-            model-viewer, .case-content video, .case-content img { 
-                height: 300px !important; /* 手机端不需要那么高 */
-            }
-            
-            .case-content section { margin-bottom: 80px; }
-
-            /* 7. 底部信息居中 */
             footer { 
                 padding: 40px 20px; 
                 flex-direction: column; 
-                gap: 15px; 
-                text-align: center; 
+                text-align: center;
+                gap: 15px;
+                font-size: 10px;
             }
         }
                 
@@ -758,6 +778,26 @@
     zoomOverlay.addEventListener('click', () => {
         zoomOverlay.style.display = 'none';
     });
+</script>
+
+<!-- 微信环境提示工具 -->
+<div id="wechat-notice" style="display: none; position: fixed; top: 0; left: 0; width: 100%; background: var(--accent-orange); color: white; text-align: center; padding: 10px; font-size: 14px; z-index: 10001; font-family: var(--font-mono);">
+    NOTICE: For 3D interaction and high-quality video, please open in System Browser (Safari/Chrome).
+</div>
+
+<script>
+    // 检测是否在微信浏览器中
+    function isWechat() {
+        return /MicroMessenger/i.test(window.navigator.userAgent);
+    }
+
+    window.onload = function() {
+        if (isWechat()) {
+            document.getElementById('wechat-notice').style.display = 'block';
+            // 微信浏览器不支持自定义 cursor，强制显示系统鼠标以防指针消失
+            document.body.style.cursor = 'auto';
+        }
+    };
 </script>
 
 </body>
