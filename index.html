@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lance Liu | Senior Level Designer</title>
+    <!-- 引入 3D 查看器脚本 -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
     <style>
         :root {
             --bg: #0a0a0a;
@@ -125,7 +127,21 @@
             border-color: var(--accent-cyan);
         }
 
-        
+        /* 3D 模型查看器样式 */
+        model-viewer {
+            width: 100%;
+            height: 600px; /* 窗口高度，可根据需要调整 */
+            background-color: #111; /* 背景深色，突出模型 */
+            border: 1px solid var(--line);
+            margin-bottom: 25px;
+            display: block;
+            outline: none;
+            --poster-color: transparent; /* 加载前背景透明 */
+        }
+
+        /* 隐藏移动端 AR 按钮（如果不需要） */
+        #ar-button { display: none; }
+                
         footer { padding: 80px 60px; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 12px; color: #333; display: flex; justify-content: space-between; }
     </style>
 </head>
@@ -424,6 +440,31 @@
             <section id="t-2">
                 <h3>World-Scale Layout & Routing</h3>
                 <p>Managed large-scale whitebox planning for regions from 1km² to 4.1km². Focused on content hierarchy (Primary/Secondary/Tertiary POIs) and exploration flow.</p>
+
+                <section>
+                    <h4>The Dusk Castle: Interactive 3D Whitebox</h4>
+                    <p>Use your mouse to <strong>Rotate</strong> (Left Click), <strong>Pan</strong> (Right Click), and <strong>Zoom</strong> (Scroll).</p>
+                    
+                    <!-- 3D 模型核心组件 -->
+                    <model-viewer 
+                    src="DarkCastle.glb" 
+                    alt="3D whitebox" 
+                    camera-controls 
+                    auto-rotate 
+                    shadow-intensity="1" 
+                    bounds="tight"
+                    enable-pan
+                    min-camera-orbit="auto auto auto"
+                    max-camera-orbit="auto auto auto"
+                    style="width: 100%; height: 600px; background-color: #0d0d0d;">
+                    
+                    <!-- 确保进度条在加载时显示 -->
+                    <div slot="progress-bar" style="background-color: var(--accent-cyan); height: 2px; width: 100%;"></div>
+                </model-viewer>
+                    
+                    <div class="img-caption">// High-density spatial logic validation via 3D blockout.</div>
+                </section>
+
                 <img src="L6_02.webp" alt="L6_02">
                 <img src="L6_03.webp" alt="L6_03">
                 <img src="L6_04.webp" alt="L6_04">
@@ -481,6 +522,25 @@
                     
                 <p>Independently developed gameplay whitebox focused on high-density linear flow and verticality. Validating 3C mechanics through environmental navigation.</p>
                 <img src="WaterRuin_Cover.webp" alt="Water Ruins Cover">
+
+                <h4>Water Ruins: Interactive 3D Whitebox</h4>
+                <p>Use your mouse to <strong>Rotate</strong> (Left Click), <strong>Pan</strong> (Right Click), and <strong>Zoom</strong> (Scroll).</p>
+                <!-- Water Ruins 3D Viewer -->
+                <model-viewer 
+                src="WaterRuin.glb" 
+                alt="Water Ruins 3D Whitebox" 
+                camera-controls 
+                auto-rotate 
+                shadow-intensity="1" 
+                bounds="tight"
+                enable-pan
+                min-camera-orbit="auto auto auto"
+                max-camera-orbit="auto auto auto"
+                style="width: 100%; height: 500px; background-color: #0d0d0d; border: 1px solid var(--line); margin-bottom: 30px;">
+                <div slot="progress-bar" style="background-color: var(--accent-cyan); height: 2px; width: 100%;"></div>
+                </model-viewer>
+                <div class="img-caption">// High-density spatial logic validation via 3D blockout.</div>
+                
                 <img src="WaterRuinOverView.webp" alt="Water Ruins Overview">
                 <video autoplay loop muted playsinline><source src="Water_1.mp4" type="video/mp4"></video>
                 <video autoplay loop muted playsinline><source src="Water_2.mp4" type="video/mp4"></video>
@@ -506,6 +566,24 @@
                 </em></p>
 
                 <p>Exploring micro-scale encounter design and environmental storytelling within a compact linear space. High-intensity pacing in a 5-8 minute vertical slice.</p>
+                <h4>Tiny Island: Interactive 3D Whitebox</h4>
+                <p>Use your mouse to <strong>Rotate</strong> (Left Click), <strong>Pan</strong> (Right Click), and <strong>Zoom</strong> (Scroll).</p>
+                <!-- Tiny Island 3D Viewer -->
+                <model-viewer 
+                src="TinyIsland.glb" 
+                alt="Tiny Island 3D Whitebox" 
+                camera-controls 
+                auto-rotate 
+                shadow-intensity="1" 
+                bounds="tight"
+                enable-pan
+                min-camera-orbit="auto auto auto"
+                max-camera-orbit="auto auto auto"
+                style="width: 100%; height: 500px; background-color: #0d0d0d; border: 1px solid var(--line); margin-bottom: 30px;">
+                <div slot="progress-bar" style="background-color: var(--accent-cyan); height: 2px; width: 100%;"></div>
+                </model-viewer>
+                <div class="img-caption">// High-density spatial logic validation via 3D blockout.</div>
+
                 <img src="TinyIsland_Cover.webp" alt="Tiny Island Cover">
                 <img src="TinyIsland_Detail.webp" alt="Tiny Island Detail">
                 <div class="contact-hint">PLAYABLE BUILDS AVAILABLE UPON REQUEST VIA E-MAIL.</div>
