@@ -10,10 +10,10 @@
     <script type="module" src="https://cdnjs.cloudflare.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
     <style>
         :root {
-            --bg: #0a0a0a;
+            --bg: #141414;      /* 核心修改：更高级的深灰色 */
             --accent-orange: #e65100;
             --accent-cyan: #00e5ff;
-            --line: #1e1e1e;
+            --line: #252525;    /* 相应调亮边框线，保持轮廓感 */
             --text-main: #f5f5f5;
             --text-dim: #999;
             --font-mono: "JetBrains Mono", "SF Mono", monospace;
@@ -23,12 +23,16 @@
 
         * { box-sizing: border-box; }
         body { 
-            background: var(--bg); color: var(--text-main); 
-            font-family: "Inter", -apple-system, sans-serif; font-size: var(--base-size);
-            font-weight: 300; margin: 0; overflow-x: hidden; line-height: 1.7;
-            cursor: none; /* 使用自定义HUD焦点 */
+            background: var(--bg); /* 纯净深灰底色 */
+            color: var(--text-main); 
+            font-family: "Inter", -apple-system, sans-serif; 
+            font-size: var(--base-size);
+            font-weight: 300; 
+            margin: 0; 
+            overflow-x: hidden; 
+            line-height: 1.7;
+            cursor: none;
         }
-
         /* HUD & Ripple Canvas */
         #hud-canvas {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -40,14 +44,47 @@
 
         /* NAVIGATION */
         nav {
-            position: fixed; top: 0; width: 100%; z-index: 1000;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 25px 60px; backdrop-filter: blur(15px); border-bottom: 1px solid var(--line);
-            background: rgba(10,10,10,0.7);
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            z-index: 1000;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 25px 60px; 
+            background: var(--bg); /* 使用实色背景，不再透光 */
+            border-bottom: 1px solid var(--line);
         }
-        .nav-logo { font-weight: 800; font-size: 1.1rem; letter-spacing: 1px; cursor: default; pointer-events: auto; }
-        .nav-email { font-family: var(--font-mono); font-size: 18px; color: var(--text-dim); text-decoration: none; transition: 0.3s; pointer-events: auto; }
-        .nav-email:hover { color: var(--accent-orange); }
+
+        /* 3D 查看器和视频容器：稍微深一点，产生嵌套感（In-set Look） */
+        model-viewer, .video-container {
+            background-color: #0d0d0d !important; /* 比页面背景更深一点 */
+            border: 1px solid var(--line);
+        }
+
+        /* 卡片悬停时的颜色变化 */
+        .visual-box:hover {
+            border-color: rgba(0, 229, 255, 0.3);
+            box-shadow: 0 0 30px rgba(0,0,0,0.2);
+        }
+        .nav-logo { 
+            font-weight: 800; 
+            font-size: 1.1rem; 
+            letter-spacing: 1px; 
+            color: var(--text-main);
+            cursor: default; /* 保持不可点击 */
+        }
+
+        .nav-email { 
+            font-family: var(--font-mono); 
+            font-size: 18px; /* 保持你满意的加大字号 */
+            color: var(--text-dim); 
+            text-decoration: none; 
+            transition: 0.3s; 
+        }
+        .nav-email:hover { 
+            color: var(--accent-orange); 
+        }
 
         /* VIEW CONTROL */
         .view { display: none; animation: fadeIn 0.6s var(--transition); }
@@ -132,18 +169,83 @@
         /* 3D 模型查看器样式 */
         model-viewer {
             width: 100%;
-            height: 600px; /* 窗口高度，可根据需要调整 */
-            background-color: #111; /* 背景深色，突出模型 */
+            height: 600px;
+            background-color: #080808; /* 比页面背景稍微深一点，产生“下沉”感 */
             border: 1px solid var(--line);
             margin-bottom: 25px;
             display: block;
             outline: none;
-            --poster-color: transparent; /* 加载前背景透明 */
         }
 
         /* 隐藏移动端 AR 按钮（如果不需要） */
         #ar-button { display: none; }
 
+        /* --- 3D & Video 加载反馈系统 --- */
+        /* 1. 3D 加载条 */
+        .progress-bar {
+        /* 核心修改：确保这里不强制显示，让组件自己控制 */
+            display: block; 
+            width: 33%; height: 2px;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            pointer-events: none; /* 防止遮挡鼠标操作 */
+        }
+
+        /* 增加一个辅助类，配合 JS 使用 */
+        .hide-loader {
+            display: none !important;
+        }
+        .update-bar {
+            background-color: var(--accent-cyan);
+            width: 0%; height: 100%;
+            border-radius: 10px; transition: width 0.3s;
+        }
+        .loading-text {
+            position: absolute; 
+            top: calc(50% + 20px); 
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-mono); 
+            font-size: 10px;
+            color: var(--accent-cyan); 
+            letter-spacing: 2px;
+            /* 核心修复：防止文字阻挡鼠标点击模型 */
+            pointer-events: none; 
+            z-index: 10;
+        }
+
+        /* 2. 视频容器与扫描线加载动画 */
+        .video-container {
+            position: relative; width: 100%; background: #080808;
+            border: 1px solid var(--line); margin-bottom: 25px; overflow: hidden;
+        }
+        .video-container video {
+            width: 100%; display: block; opacity: 0; /* 加载完前隐藏 */
+            transition: opacity 0.8s ease;
+        }
+        .video-loader {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-mono); font-size: 10px;
+            color: #444; letter-spacing: 2px;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+        .video-loader::after {
+            content: ""; width: 80px; height: 1px;
+            background: var(--accent-orange); animation: scan 2s infinite linear;
+        }
+        @keyframes scan {
+            0% { transform: scaleX(0); opacity: 0; }
+            50% { transform: scaleX(1); opacity: 1; }
+            100% { transform: scaleX(0); opacity: 0; }
+        }
+        /* 视频准备就绪后的状态 */
+        .video-ready video { opacity: 1; }
+        .video-ready .video-loader { display: none; }
+
+        
         /* --- 手机端适配最终优化版 (Senior LD Optimized) --- */
         @media (max-width: 768px) {
             /* 0. 禁用桌面端特有的交互 */
@@ -327,7 +429,12 @@
         <main class="case-content">
             <section id="cb-1">
                 <h3>Heilung Fjord Map Design</h3>
-                <video autoplay loop muted playsinline><source src="Cb_Attacker_1.mp4" type="video/mp4"></video>
+                <div class="video-container">
+                    <div class="video-loader">STREAMING DATA...</div>
+                    <video autoplay loop muted playsinline oncanplay="this.parentElement.classList.add('video-ready')">
+                        <source src="Cb_Attacker_1.mp4" type="video/mp4">
+                    </video>
+                </div>
                     <p>
                     The primary design goal was to ensure that combat remains 
                     <strong><span style="color:#8fd3e8;">uncertain until the final moments</span></strong>.
@@ -373,10 +480,30 @@
 
             <section id="cb-showcase">
                 <h3>Gameplay Showcase</h3>
-                <video autoplay loop muted playsinline><source src="Cb_Attacker_2.mp4" type="video/mp4"></video>
-                <video autoplay loop muted playsinline><source src="Cb_Attacker_3.mp4" type="video/mp4"></video>
-                <video autoplay loop muted playsinline><source src="Cb_Defender_1.mp4" type="video/mp4"></video>
-                <video autoplay loop muted playsinline><source src="Cb_Defender_2.mp4" type="video/mp4"></video>
+                <div class="video-container">
+                    <div class="video-loader">STREAMING DATA...</div>
+                    <video autoplay loop muted playsinline oncanplay="this.parentElement.classList.add('video-ready')">
+                        <source src="Cb_Attacker_2.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <div class="video-container">
+                    <div class="video-loader">STREAMING DATA...</div>
+                    <video autoplay loop muted playsinline oncanplay="this.parentElement.classList.add('video-ready')">
+                        <source src="Cb_Attacker_3.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <div class="video-container">
+                    <div class="video-loader">STREAMING DATA...</div>
+                    <video autoplay loop muted playsinline oncanplay="this.parentElement.classList.add('video-ready')">
+                        <source src="Cb_Defender_1.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <div class="video-container">
+                    <div class="video-loader">STREAMING DATA...</div>
+                    <video autoplay loop muted playsinline oncanplay="this.parentElement.classList.add('video-ready')">
+                        <source src="Cb_Defender_2.mp4" type="video/mp4">
+                    </video>
+                </div>
                 <div class="disclaimer">Footage sourced from web for design demonstration purposes only.</div>
             </section>
 
@@ -529,6 +656,13 @@
                     camera-controls 
                     auto-rotate 
                     shadow-intensity="1" 
+
+                    bounds="tight"
+                    enable-pan
+                    environment-image="neutral" 
+                    exposure="1"
+                    loading="eager"
+
                     bounds="tight"
                     enable-pan
                     min-camera-orbit="auto auto auto"
@@ -536,7 +670,8 @@
                     style="width: 100%; height: 600px; background-color: #0d0d0d;">
                     
                     <!-- 确保进度条在加载时显示 -->
-                    <div slot="progress-bar" style="background-color: var(--accent-cyan); height: 2px; width: 100%;"></div>
+                    <div slot="progress-bar" class="progress-bar"><div class="update-bar"></div></div>
+                    <div class="loading-text">INITIALIZING 3D WORKSPACE...</div>
                 </model-viewer>
                     
                     <div class="img-caption">// High-density spatial logic validation via 3D blockout.</div>
@@ -609,21 +744,52 @@
                 camera-controls 
                 auto-rotate 
                 shadow-intensity="1" 
+                bounds="tight" 
+                enable-pan
+                environment-image="neutral" 
+                exposure="1"
+                loading="eager"
                 bounds="tight"
                 enable-pan
                 min-camera-orbit="auto auto auto"
                 max-camera-orbit="auto auto auto"
                 style="width: 100%; height: 500px; background-color: #0d0d0d; border: 1px solid var(--line); margin-bottom: 30px;">
-                <div slot="progress-bar" style="background-color: var(--accent-cyan); height: 2px; width: 100%;"></div>
+                <div slot="progress-bar" class="progress-bar"><div class="update-bar"></div></div>
+                <div class="loading-text">INITIALIZING 3D WORKSPACE...</div>
                 </model-viewer>
                 <div class="img-caption">// High-density spatial logic validation via 3D blockout.</div>
                 
                 <img src="WaterRuinOverView.webp" alt="Water Ruins Overview">
-                <video autoplay loop muted playsinline><source src="Water_1.mp4" type="video/mp4"></video>
-                <video autoplay loop muted playsinline><source src="Water_2.mp4" type="video/mp4"></video>
-                <video autoplay loop muted playsinline><source src="Water_3.mp4" type="video/mp4"></video>
-                <video autoplay loop muted playsinline><source src="Water_4.mp4" type="video/mp4"></video>
-                <video autoplay loop muted playsinline><source src="Water_5.mp4" type="video/mp4"></video>
+                <div class="video-container">
+                    <div class="video-loader">STREAMING DATA...</div>
+                    <video autoplay loop muted playsinline oncanplay="this.parentElement.classList.add('video-ready')">
+                        <source src="Water_1.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <div class="video-container">
+                    <div class="video-loader">STREAMING DATA...</div>
+                    <video autoplay loop muted playsinline oncanplay="this.parentElement.classList.add('video-ready')">
+                        <source src="Water_2.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <div class="video-container">
+                    <div class="video-loader">STREAMING DATA...</div>
+                    <video autoplay loop muted playsinline oncanplay="this.parentElement.classList.add('video-ready')">
+                        <source src="Water_3.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <div class="video-container">
+                    <div class="video-loader">STREAMING DATA...</div>
+                    <video autoplay loop muted playsinline oncanplay="this.parentElement.classList.add('video-ready')">
+                        <source src="Water_4.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <div class="video-container">
+                    <div class="video-loader">STREAMING DATA...</div>
+                    <video autoplay loop muted playsinline oncanplay="this.parentElement.classList.add('video-ready')">
+                        <source src="Water_5.mp4" type="video/mp4">
+                    </video>
+                </div>
                 <div class="img-caption">// UE5 Whitebox gameplay sequences focusing on movement pacing and 3C flow.</div>
             </section>
             
@@ -647,17 +813,20 @@
                 <p>Use your mouse to <strong>Rotate</strong> (Left Click), <strong>Pan</strong> (Right Click), and <strong>Zoom</strong> (Scroll).</p>
                 <!-- Tiny Island 3D Viewer -->
                 <model-viewer 
-                src="TinyIsland.glb" 
-                alt="Tiny Island 3D Whitebox" 
-                camera-controls 
-                auto-rotate 
-                shadow-intensity="1" 
-                bounds="tight"
-                enable-pan
-                min-camera-orbit="auto auto auto"
-                max-camera-orbit="auto auto auto"
-                style="width: 100%; height: 500px; background-color: #0d0d0d; border: 1px solid var(--line); margin-bottom: 30px;">
-                <div slot="progress-bar" style="background-color: var(--accent-cyan); height: 2px; width: 100%;"></div>
+                    src="TinyIsland.glb" 
+                    alt="Tiny Island 3D Whitebox" 
+                    camera-controls 
+                    auto-rotate 
+                    shadow-intensity="1" 
+                    bounds="tight"
+                    enable-pan
+                    environment-image="neutral" 
+                    exposure="1"
+                    loading="eager"
+                    max-camera-orbit="auto auto auto"
+                    style="width: 100%; height: 500px; background-color: #0d0d0d; border: 1px solid var(--line); margin-bottom: 30px;">
+                    <div slot="progress-bar" class="progress-bar"><div class="update-bar"></div></div>
+                    <div class="loading-text">INITIALIZING 3D WORKSPACE...</div>
                 </model-viewer>
                 <div class="img-caption">// High-density spatial logic validation via 3D blockout.</div>
 
@@ -778,6 +947,46 @@
     zoomOverlay.addEventListener('click', () => {
         zoomOverlay.style.display = 'none';
     });
+
+    // --- 强力隐藏加载反馈 ---
+    function initModelViewers() {
+        document.querySelectorAll('model-viewer').forEach(viewer => {
+            const loadingText = viewer.querySelector('.loading-text');
+            const progressBar = viewer.querySelector('.progress-bar');
+
+            const hideAll = () => {
+                if (loadingText) loadingText.classList.add('hide-loader');
+                if (progressBar) progressBar.classList.add('hide-loader');
+                console.log("Loader cleared for:", viewer.src);
+            };
+
+            // 1. 如果已经加载完成（针对 Live Server 缓存）
+            if (viewer.loaded) {
+                hideAll();
+            }
+
+            // 2. 监听加载完成事件
+            viewer.addEventListener('load', hideAll);
+
+            // 3. 监听进度，到 100% 强制隐藏
+            viewer.addEventListener('progress', (event) => {
+                const progress = event.detail.totalProgress;
+                const updateBar = viewer.querySelector('.update-bar');
+                if (updateBar) updateBar.style.width = (progress * 100) + '%';
+                
+                if (progress >= 1) {
+                    setTimeout(hideAll, 200); // 延时 0.2 秒让进度条填满后再消失
+                }
+            });
+        });
+    }
+
+    // 确保在页面资源加载后立即运行
+    if (document.readyState === 'complete') {
+        initModelViewers();
+    } else {
+        window.addEventListener('load', initModelViewers);
+    }
 </script>
 
 <!-- 微信环境提示工具 -->
